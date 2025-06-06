@@ -6,7 +6,9 @@ import {
   Row,
   Col,
   Skeleton,
+  Input,
 } from "antd";
+import { SearchOutlined } from "@ant-design/icons";
 
 import TaylorImg from "../../assets/images/taylor.jpeg";
 import BillieImg from "../../assets/images/billie.jpeg";
@@ -48,6 +50,7 @@ const Playlist = () => {
   const [api, contextHolder] = notification.useNotification();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchText, setSearchText] = useState(""); // 🆕 State untuk search input
 
   useEffect(() => {
     const loadingTimer = setTimeout(() => {
@@ -74,7 +77,7 @@ const Playlist = () => {
     return (
       <div className="p-6 flex flex-col flex-grow">
         <Row justify="start" className="mb-6">
-          <Title level={1} style={{ margin: 0, paddingLeft: 16 , fontWeight: "bold"}}>
+          <Title level={1} style={{ margin: 0, paddingLeft: 16, fontWeight: "bold" }}>
             PLAYLISTKU
           </Title>
         </Row>
@@ -90,7 +93,7 @@ const Playlist = () => {
       {contextHolder}
 
       <Row justify="start" className="mb-6">
-        <Title level={1} style={{ margin: 0, paddingLeft: 16 , fontWeight: "bold"}}>
+        <Title level={1} style={{ margin: 0, paddingLeft: 16, fontWeight: "bold" }}>
           PLAYLISTKU
         </Title>
       </Row>
@@ -139,6 +142,27 @@ const Playlist = () => {
               {currentBanner.description}
             </Text>
           </Card>
+        </Col>
+      </Row>
+
+      {/* Search Bar muncul di bawah banner */}
+      <Row justify="center" style={{ marginTop: 32 }}>
+        <Col xs={24} sm={22} md={20} lg={18}>
+          <Input
+  size="large"
+  placeholder="Looking for something to vibe with? 🎶"
+  prefix={<SearchOutlined />}
+  value={searchText}
+  onChange={(e) => setSearchText(e.target.value)}
+  style={{
+    border: "2px solid transparent",
+    borderRadius: 8,
+    backgroundImage:
+      "linear-gradient(white, white), linear-gradient(to right, red, orange, yellow, green, blue, indigo, violet)",
+    backgroundOrigin: "border-box",
+    backgroundClip: "padding-box, border-box",
+  }}
+/>
         </Col>
       </Row>
     </div>
