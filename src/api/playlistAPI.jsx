@@ -1,10 +1,12 @@
 import { getDataPublic, postDataPublic, deleteDataPrivate } from '@/lib/axios/axiosPublic';
 
-export const fetchPlaylistById = async (id) =>
-  await getDataPublic(`/api/playlist/${id}`);
+const GROUP_ID = 41;
 
-export const addPlaylistToGroup = async (groupId, playlistData) =>
-  await postDataPublic(`/api/playlist/${groupId}`, playlistData);
+export const fetchPlaylistByGroup = async () =>
+  await getDataPublic(`/api/playlist/${GROUP_ID}`);
+
+export const addPlaylistToGroup = async (playlistData) =>
+  await postDataPublic(`/api/playlist/${GROUP_ID}`, playlistData);
 
 export const updatePlaylistById = async (idPlay, updatedData) =>
   await postDataPublic(`/api/playlist/update/${idPlay}`, updatedData);
