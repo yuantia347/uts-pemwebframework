@@ -21,7 +21,7 @@ export const getDataPublic = async (url) => {
 export const postDataPublic = async (url, data) => {
   try {
     const response = await axiosInstance.post(url, data);
-    return response.data;
+    return response.data; // ✅ ini mengembalikan .data
   } catch (error) {
     throw error.response?.data || error;
   }
@@ -31,6 +31,23 @@ export const deleteDataPrivate = async (url) => {
   try {
     const response = await axiosInstance.delete(url);
     return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
+};
+
+export const addPlaylistToGroup = async (groupId, playlistData) => {
+  try {
+    return await postDataPublic(`/api/playlist/${groupId}`, playlistData); // ✅ return DI SINI
+  } catch (error) {
+    throw error.response?.data || error;
+  }
+};
+
+export const fetchPlaylistById = async (id) => {
+  try {
+    const response = await getDataPublic(`/api/playlist/${id}`);
+    return response;
   } catch (error) {
     throw error.response?.data || error;
   }
