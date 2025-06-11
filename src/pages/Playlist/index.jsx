@@ -103,7 +103,7 @@ const Playlist = () => {
       const playlistData = resp?.datas ?? resp;
       if (playlistData && typeof playlistData === 'object' && Object.keys(playlistData).length > 0) {
         showAlert("success", "Sukses", "Playlist berhasil ditambahkan.");
-        setDataSources((prev) => [...prev, playlistData]);
+        setDataSources((prev) => [playlistData, ...prev]);
         onClose();
       } else {
         showAlert("error", "Gagal", "Gagal menyimpan playlist.");
@@ -174,7 +174,7 @@ const Playlist = () => {
           <Input
             size="large"
             placeholder="Looking for something to vibe with? 🎶"
-            prefix={<SearchOutlined />}
+            prefix={<SearchOutlined />} 
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
             style={{ borderRadius: 8, border: "1px solid #ddd" }}
