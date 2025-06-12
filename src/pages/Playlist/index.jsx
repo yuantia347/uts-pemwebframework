@@ -5,121 +5,66 @@ import {
   Input,
   Button,
   Form,
-  List,
   Drawer,
   notification,
   Row,
   Col,
+  Select,
 } from "antd";
 import {
-  SearchOutlined,
-  DeleteOutlined,
-  EditOutlined,
   PlusCircleFilled,
   PlayCircleOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  SearchOutlined,
 } from "@ant-design/icons";
-import { getData, sendData } from "../../utils/api";
+import { sendData, getData, updateData } from "../../utils/api";
+
 import TaylorImg from "../../assets/images/taylor.jpeg";
 import BillieImg from "../../assets/images/billie.jpeg";
 import BrunoImg from "../../assets/images/bruno.jpeg";
 import EdImg from "../../assets/images/ed.jpeg";
 
-const { Title, Text } = Typography;
+const { Title, Paragraph } = Typography;
+const { Option } = Select;
+
+const groupId = 41;
 
 const Playlist = () => {
-  const [api, contextHolder] = notification.useNotification();
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [playlists, setPlaylists] = useState([]);
+  const [open, setOpen] = useState(false);
   const [form] = Form.useForm();
-  const [editingId, setEditingId] = useState(null);
+  const [api, contextHolder] = notification.useNotification();
   const [searchText, setSearchText] = useState("");
+  const [editingItem, setEditingItem] = useState(null);
   const [currentArtistIndex, setCurrentArtistIndex] = useState(0);
 
   const artistImages = [
     {
       src: TaylorImg,
-      name: "Taylor Swift",
-      title: "Listen to trending songs all the time",
-      subtitle: "Taylor Swift Midnights",
-      description:
-        "With Taylor Swift’s. You can get premium music for free anywhere at any time.",
+      title: "Taylor Swift Midnights",
+      subtitle: "Listen to trending songs all the time",
+      description: "Premium music for free anywhere.",
     },
     {
       src: BillieImg,
-      name: "Billie Eilish",
-      title: "Experience moody melodies",
-      subtitle: "Billie Eilish Collection",
-      description:
-        "Dive into the deep and emotional world of Billie Eilish's music.",
+      title: "Billie Eilish Collection",
+      subtitle: "Experience moody melodies",
+      description: "Emotional world of Billie Eilish.",
     },
     {
       src: BrunoImg,
-      name: "Bruno Mars",
-      title: "Funk & Soul Vibes",
-      subtitle: "Bruno Mars Hits",
-      description: "Enjoy the rhythm and groove with Bruno Mars’ greatest hits.",
+      title: "Bruno Mars Hits",
+      subtitle: "Funk & Soul Vibes",
+      description: "Rhythm and groove with Bruno Mars.",
     },
     {
       src: EdImg,
-      name: "Ed Sheeran",
-      title: "Romantic & Acoustic",
-      subtitle: "Ed Sheeran Special",
-      description:
-        "Relax and fall in love with Ed Sheeran’s timeless ballads.",
+      title: "Ed Sheeran Special",
+      subtitle: "Romantic & Acoustic",
+      description: "Timeless ballads from Ed Sheeran.",
     },
   ];
-
-  const getYouTubeThumbnail = (url) => {
-    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^\s&]+)/);
-    return match ? `https://img.youtube.com/vi/${match[1]}/hqdefault.jpg` : "";
-  };
-
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const res = await getData("/api/playlist/41");
-      setData(res);
-    } catch {
-      api.error({ message: "Error", description: "Gagal mengambil data." });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const onFinish = async (values) => {
-    try {
-      const formData = new FormData();
-      const finalValues = { ...values };
-
-      if (!finalValues.play_thumbnail && finalValues.play_url) {
-        finalValues.play_thumbnail = getYouTubeThumbnail(finalValues.play_url);
-      }
-
-      Object.entries(finalValues).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          formData.append(key, value);
-        }
-      });
-
-      const url = editingId
-        ? `/api/playlist/update/${editingId}`
-        : "/api/playlist/41";
-
-      await sendData(url, formData);
-      api.success({ message: "Sukses", description: "Data disimpan." });
-      fetchData();
-      setDrawerOpen(false);
-      form.resetFields();
-      setEditingId(null);
-    } catch {
-      api.error({ message: "Gagal", description: "Tidak dapat menyimpan." });
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -128,9 +73,55 @@ const Playlist = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const filteredData = data.filter((item) =>
-    item.play_name.toLowerCase().includes(searchText.toLowerCase())
-  );
+  const getYouTubeThumbnail = (url) => {
+    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^\s&]+)/);
+    return match ? `https://img.youtube.com/vi/${match[1]}/hqdefault.jpg` : "";
+  };
+
+  const fetchData = async () => {
+    try {
+      const data = await getData(`/api/playlist/${groupId}`);
+      setPlaylists(data);
+    } catch (error) {
+      console.error("Gagal mengambil data playlist", error);
+    }
+  };
+
+  const onFinish = async (values) => {
+    if (!values.play_thumbnail && values.play_url) {
+      values.play_thumbnail = getYouTubeThumbnail(values.play_url);
+    }
+
+    const formData = new FormData();
+    Object.keys(values).forEach((key) => {
+      formData.append(key, values[key]);
+    });
+
+    try {
+      if (editingItem) {
+        await updateData(
+          `/api/playlist/${groupId}/${editingItem.id}`,
+          formData
+        );
+        api.success({ message: "Berhasil mengedit playlist" });
+      } else {
+        await sendData(`/api/playlist/${groupId}`, formData);
+        api.success({ message: "Berhasil menambahkan playlist" });
+      }
+
+      setOpen(false);
+      form.resetFields();
+      setEditingItem(null);
+      fetchData();
+    } catch (error) {
+      console.error(error);
+      api.error({ message: "Gagal menyimpan playlist" });
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   return (
     <div style={{ padding: 24 }}>
@@ -146,12 +137,11 @@ const Playlist = () => {
         }}
       >
         <Title level={2} style={{ color: "#fff", fontWeight: "bold" }}>
-          Playlistku
+          MyPlaylist
         </Title>
-        <Text style={{ color: "#fff" }}>
-          Manage your video playlist list according to your needs.
-        </Text>
-
+        <Paragraph style={{ color: "#fff" }}>
+          Manage your video playlist according to your needs.
+        </Paragraph>
         <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
           <Col xs={24} sm={16}>
             <Input
@@ -169,8 +159,8 @@ const Playlist = () => {
               size="large"
               onClick={() => {
                 form.resetFields();
-                setEditingId(null);
-                setDrawerOpen(true);
+                setEditingItem(null);
+                setOpen(true);
               }}
             >
               Add Playlist
@@ -207,109 +197,121 @@ const Playlist = () => {
               transform: "translate(-50%, -50%)",
               color: "#fff",
               textAlign: "center",
-              textShadow: "0 2px 6px rgba(0,0,0,0.6)",
             }}
           >
             <Title level={3} style={{ color: "white" }}>
               {artistImages[currentArtistIndex].title}
             </Title>
-            <Text strong style={{ color: "white", fontSize: 18 }}>
+            <Paragraph strong style={{ color: "white", fontSize: 18 }}>
               {artistImages[currentArtistIndex].subtitle}
-            </Text>
-            <br />
-            <Text style={{ color: "white" }}>
+            </Paragraph>
+            <Paragraph style={{ color: "white" }}>
               {artistImages[currentArtistIndex].description}
-            </Text>
+            </Paragraph>
           </div>
         </div>
       </div>
 
-      {/* List Playlist */}
-      <List
-        loading={loading}
-        grid={{ gutter: 16, column: 3 }}
-        dataSource={filteredData}
-        renderItem={(item) => (
-          <List.Item>
-            <Card
-              hoverable
-              cover={
-                <img
-                  alt="thumbnail"
-                  src={
-                    item.play_thumbnail || getYouTubeThumbnail(item.play_url)
+      {/* Playlist Cards */}
+      <Row gutter={[16, 16]}>
+        {playlists
+          .filter((item) =>
+            item.play_name.toLowerCase().includes(searchText.toLowerCase())
+          )
+          .map((item) => (
+            <Col key={item.id} xs={24} sm={12} md={8} lg={6}>
+              <Card
+                hoverable
+                cover={
+                  <img
+                    alt={item.play_name}
+                    src={item.play_thumbnail}
+                    style={{ height: 160, objectFit: "cover" }}
+                  />
+                }
+                actions={[
+                  <a
+                    href={item.play_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ color: "#1890ff" }}
+                  >
+                    <PlayCircleOutlined key="play" />
+                  </a>,
+                  <EditOutlined
+                    key="edit"
+                    style={{ cursor: "default", opacity: 0.3 }}
+                  />,
+                  <DeleteOutlined
+                    key="delete"
+                    style={{ cursor: "default", opacity: 0.3 }}
+                  />,
+                ]}
+              >
+                <Card.Meta
+                  title={item.play_name}
+                  description={
+                    <>
+                      <Paragraph ellipsis={{ rows: 2 }}>
+                        {item.play_description}
+                      </Paragraph>
+                      <small>Genre: {item.play_genre}</small>
+                    </>
                   }
-                  style={{ height: 200, objectFit: "cover" }}
                 />
-              }
-              actions={[
-                <Button
-                  type="link"
-                  href={item.play_url}
-                  target="_blank"
-                  icon={<PlayCircleOutlined />}
-                />,
-                <EditOutlined
-                  style={{ color: "#ccc", cursor: "not-allowed" }}
-                />,
-                <DeleteOutlined
-                  style={{ color: "#ccc", cursor: "not-allowed" }}
-                />,
-              ]}
-            >
-              <Title level={5}>{item.play_name}</Title>
-              <Text type="secondary">
-                Genre: {item.play_genre || "-"}
-              </Text>
-              <br />
-              <Text>{item.play_description}</Text>
-            </Card>
-          </List.Item>
-        )}
-      />
+              </Card>
+            </Col>
+          ))}
+      </Row>
 
       {/* Drawer Form */}
       <Drawer
-        title={editingId ? "Edit Playlist" : "Tambah Playlist"}
-        open={drawerOpen}
+        title={editingItem ? "Edit Playlist" : "Tambah Playlist"}
+        placement="right"
         onClose={() => {
+          setOpen(false);
+          setEditingItem(null);
           form.resetFields();
-          setDrawerOpen(false);
-          setEditingId(null);
         }}
+        open={open}
         width={400}
       >
-        <Form layout="vertical" form={form} onFinish={onFinish}>
+        <Form layout="vertical" onFinish={onFinish} form={form}>
           <Form.Item
+            label="Playlist Name"
             name="play_name"
-            label="Nama"
-            rules={[{ required: true }]}
+            rules={[{ required: true, message: "Harap isi nama playlist" }]}
           >
-            <Input placeholder="Nama Playlist" />
+            <Input placeholder="Contoh: Suasana Sedih" />
           </Form.Item>
           <Form.Item
-            name="play_url"
             label="URL Video"
-            rules={[{ required: true }]}
+            name="play_url"
+            rules={[{ required: true, message: "Harap isi URL video" }]}
           >
-            <Input placeholder="Contoh: https://..." />
+            <Input placeholder="https://youtube.com/..." />
           </Form.Item>
-          <Form.Item name="play_thumbnail" label="Thumbnail (Opsional)">
-            <Input placeholder="Kosongkan untuk otomatis dari YouTube" />
+          <Form.Item label="Thumbnail" name="play_thumbnail">
+            <Input placeholder="Opsional, akan otomatis jika kosong" />
+          </Form.Item>
+          <Form.Item label="Genre" name="play_genre" initialValue="education">
+            <Select>
+              <Option value="education">Education</Option>
+              <Option value="music">Music</Option>
+              <Option value="documentary">Documentary</Option>
+              <Option value="other">Other</Option>
+            </Select>
           </Form.Item>
           <Form.Item
-            name="play_genre"
-            label="Genre"
-            rules={[{ required: true }]}
+            label="Description"
+            name="play_description"
+            rules={[{ required: true, message: "Harap isi deskripsi" }]}
           >
-            <Input placeholder="Contoh: Musik, Edukasi" />
-          </Form.Item>
-          <Form.Item name="play_description" label="Deskripsi">
             <Input.TextArea rows={3} />
           </Form.Item>
           <Form.Item>
             <Button type="primary" htmlType="submit" block>
-              Save
+              {editingItem ? "Update" : "Save"}
             </Button>
           </Form.Item>
         </Form>
