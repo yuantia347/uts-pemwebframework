@@ -127,7 +127,6 @@ const Playlist = () => {
     <div style={{ padding: 24 }}>
       {contextHolder}
 
-      {/* Header */}
       <div
         style={{
           background: "linear-gradient(to right, #FBC2EB, #A6C1EE)",
@@ -168,7 +167,6 @@ const Playlist = () => {
           </Col>
         </Row>
 
-        {/* Slideshow */}
         <div
           style={{
             width: "100%",
@@ -212,7 +210,6 @@ const Playlist = () => {
         </div>
       </div>
 
-      {/* Playlist Cards */}
       <Row gutter={[16, 16]}>
         {playlists
           .filter((item) =>
@@ -264,7 +261,6 @@ const Playlist = () => {
           ))}
       </Row>
 
-      {/* Drawer Form */}
       <Drawer
         title={editingItem ? "Edit Playlist" : "Tambah Playlist"}
         placement="right"
@@ -297,8 +293,10 @@ const Playlist = () => {
           <Form.Item label="Genre" name="play_genre" initialValue="education">
             <Select>
               <Option value="education">Education</Option>
-              <Option value="music">Music</Option>
+              <Option value="music">Rock</Option>
               <Option value="documentary">Documentary</Option>
+              <Option value="documentary">Pop</Option>
+              <Option value="documentary">Japan Based</Option>
               <Option value="other">Other</Option>
             </Select>
           </Form.Item>

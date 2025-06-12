@@ -52,3 +52,5 @@ export const deleteData = async (endpoint) => {
   const response = await axios.delete(`${BASE_URL}${endpoint}`);
   return response.data;
 };
+
+
