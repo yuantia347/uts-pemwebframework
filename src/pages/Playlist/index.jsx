@@ -1,15 +1,24 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
-  Typography,
-  notification,
   Card,
+  Typography,
+  Input,
+  Button,
+  Form,
+  List,
+  Drawer,
+  notification,
   Row,
   Col,
-  Skeleton,
-  Input,
 } from "antd";
-import { SearchOutlined } from "@ant-design/icons";
-
+import {
+  SearchOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  PlusCircleFilled,
+  PlayCircleOutlined,
+} from "@ant-design/icons";
+import { getData, sendData } from "../../utils/api";
 import TaylorImg from "../../assets/images/taylor.jpeg";
 import BillieImg from "../../assets/images/billie.jpeg";
 import BrunoImg from "../../assets/images/bruno.jpeg";
@@ -17,154 +26,294 @@ import EdImg from "../../assets/images/ed.jpeg";
 
 const { Title, Text } = Typography;
 
-const banners = [
-  {
-    image: TaylorImg,
-    title: "Listen to trending songs all the time",
-    subtitle: "Taylor Swift Midnights",
-    description:
-      "With Taylor Swift’s. You can get premium music for free anywhere at any time.",
-  },
-  {
-    image: BillieImg,
-    title: "Experience moody melodies",
-    subtitle: "Billie Eilish Collection",
-    description:
-      "Dive into the deep and emotional world of Billie Eilish's music.",
-  },
-  {
-    image: BrunoImg,
-    title: "Funk & Soul Vibes",
-    subtitle: "Bruno Mars Hits",
-    description: "Enjoy the rhythm and groove with Bruno Mars’ greatest hits.",
-  },
-  {
-    image: EdImg,
-    title: "Romantic & Acoustic",
-    subtitle: "Ed Sheeran Special",
-    description: "Relax and fall in love with Ed Sheeran’s timeless ballads.",
-  },
-];
-
 const Playlist = () => {
   const [api, contextHolder] = notification.useNotification();
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const [searchText, setSearchText] = useState(""); // 🆕 State untuk search input
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [form] = Form.useForm();
+  const [editingId, setEditingId] = useState(null);
+  const [searchText, setSearchText] = useState("");
+  const [currentArtistIndex, setCurrentArtistIndex] = useState(0);
 
-  useEffect(() => {
-    const loadingTimer = setTimeout(() => {
-      setIsLoading(false);
-      api.info({
-        message: "Welcome to Playlistku",
-        description: "Enjoy curated music banners updated regularly.",
-        duration: 2,
+  const artistImages = [
+    {
+      src: TaylorImg,
+      name: "Taylor Swift",
+      title: "Listen to trending songs all the time",
+      subtitle: "Taylor Swift Midnights",
+      description:
+        "With Taylor Swift’s. You can get premium music for free anywhere at any time.",
+    },
+    {
+      src: BillieImg,
+      name: "Billie Eilish",
+      title: "Experience moody melodies",
+      subtitle: "Billie Eilish Collection",
+      description:
+        "Dive into the deep and emotional world of Billie Eilish's music.",
+    },
+    {
+      src: BrunoImg,
+      name: "Bruno Mars",
+      title: "Funk & Soul Vibes",
+      subtitle: "Bruno Mars Hits",
+      description: "Enjoy the rhythm and groove with Bruno Mars’ greatest hits.",
+    },
+    {
+      src: EdImg,
+      name: "Ed Sheeran",
+      title: "Romantic & Acoustic",
+      subtitle: "Ed Sheeran Special",
+      description:
+        "Relax and fall in love with Ed Sheeran’s timeless ballads.",
+    },
+  ];
+
+  const getYouTubeThumbnail = (url) => {
+    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^\s&]+)/);
+    return match ? `https://img.youtube.com/vi/${match[1]}/hqdefault.jpg` : "";
+  };
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const res = await getData("/api/playlist/41");
+      setData(res);
+    } catch {
+      api.error({ message: "Error", description: "Gagal mengambil data." });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onFinish = async (values) => {
+    try {
+      const formData = new FormData();
+      const finalValues = { ...values };
+
+      if (!finalValues.play_thumbnail && finalValues.play_url) {
+        finalValues.play_thumbnail = getYouTubeThumbnail(finalValues.play_url);
+      }
+
+      Object.entries(finalValues).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          formData.append(key, value);
+        }
       });
-    }, 1000);
 
-    return () => clearTimeout(loadingTimer);
-  }, [api]);
+      const url = editingId
+        ? `/api/playlist/update/${editingId}`
+        : "/api/playlist/41";
+
+      await sendData(url, formData);
+      api.success({ message: "Sukses", description: "Data disimpan." });
+      fetchData();
+      setDrawerOpen(false);
+      form.resetFields();
+      setEditingId(null);
+    } catch {
+      api.error({ message: "Gagal", description: "Tidak dapat menyimpan." });
+    }
+  };
 
   useEffect(() => {
-    if (isLoading) return;
+    fetchData();
+  }, []);
+
+  useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % banners.length);
+      setCurrentArtistIndex((i) => (i + 1) % artistImages.length);
     }, 5000);
     return () => clearInterval(interval);
-  }, [isLoading]);
+  }, []);
 
-  if (isLoading) {
-    return (
-      <div className="p-6 flex flex-col flex-grow">
-        <Row justify="start" className="mb-6">
-          <Title level={1} style={{ margin: 0, paddingLeft: 16, fontWeight: "bold" }}>
-            PLAYLISTKU
-          </Title>
-        </Row>
-        <Skeleton active paragraph={{ rows: 6 }} />
-      </div>
-    );
-  }
-
-  const currentBanner = banners[currentIndex];
+  const filteredData = data.filter((item) =>
+    item.play_name.toLowerCase().includes(searchText.toLowerCase())
+  );
 
   return (
-    <div className="p-6 flex flex-col flex-grow" style={{ gap: 32 }}>
+    <div style={{ padding: 24 }}>
       {contextHolder}
 
-      <Row justify="start" className="mb-6">
-        <Title level={1} style={{ margin: 0, paddingLeft: 16, fontWeight: "bold" }}>
-          PLAYLISTKU
+      {/* Header */}
+      <div
+        style={{
+          background: "linear-gradient(to right, #FBC2EB, #A6C1EE)",
+          padding: 32,
+          borderRadius: 12,
+          marginBottom: 32,
+        }}
+      >
+        <Title level={2} style={{ color: "#fff", fontWeight: "bold" }}>
+          Playlistku
         </Title>
-      </Row>
+        <Text style={{ color: "#fff" }}>
+          Manage your video playlist list according to your needs.
+        </Text>
 
-      <Row justify="center" align="middle" style={{ flexGrow: 1 }}>
-        <Col span={24} style={{ position: "relative" }}>
-          <Card
-            hoverable
-            cover={
-              <img
-                alt={currentBanner.subtitle}
-                src={currentBanner.image}
-                style={{
-                  objectFit: "cover",
-                  width: "100%",
-                  height: 500,
-                  borderRadius: 24,
-                }}
-              />
-            }
-            style={{ borderRadius: 24, overflow: "hidden", padding: 16 }}
-            bodyStyle={{
-              position: "absolute",
-              top: 0,
-              left: 0,
+        <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
+          <Col xs={24} sm={16}>
+            <Input
+              placeholder="Looking for something to vibe with? 🎶"
+              prefix={<SearchOutlined />}
+              onChange={(e) => setSearchText(e.target.value)}
+              size="large"
+            />
+          </Col>
+          <Col xs={24} sm={8}>
+            <Button
+              icon={<PlusCircleFilled />}
+              type="primary"
+              block
+              size="large"
+              onClick={() => {
+                form.resetFields();
+                setEditingId(null);
+                setDrawerOpen(true);
+              }}
+            >
+              Add Playlist
+            </Button>
+          </Col>
+        </Row>
+
+        {/* Slideshow */}
+        <div
+          style={{
+            width: "100%",
+            aspectRatio: "16 / 6",
+            overflow: "hidden",
+            borderRadius: 12,
+            marginTop: 32,
+            position: "relative",
+          }}
+        >
+          <img
+            src={artistImages[currentArtistIndex].src}
+            alt=""
+            style={{
               width: "100%",
               height: "100%",
-              color: "white",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              alignItems: "center",
-              borderRadius: 24,
-              padding: 24,
-              textAlign: "center",
+              objectFit: "cover",
+              opacity: 0.7,
             }}
-            bordered={false}
+          />
+          <div
+            style={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              color: "#fff",
+              textAlign: "center",
+              textShadow: "0 2px 6px rgba(0,0,0,0.6)",
+            }}
           >
-            <Text type="secondary" style={{ marginBottom: 8, color: "#ddd" }}>
-              {currentBanner.subtitle}
-            </Text>
-            <Title level={2} style={{ marginBottom: 12, color: "white" }}>
-              {currentBanner.title}
+            <Title level={3} style={{ color: "white" }}>
+              {artistImages[currentArtistIndex].title}
             </Title>
-            <Text style={{ marginBottom: 24, color: "white" }}>
-              {currentBanner.description}
+            <Text strong style={{ color: "white", fontSize: 18 }}>
+              {artistImages[currentArtistIndex].subtitle}
             </Text>
-          </Card>
-        </Col>
-      </Row>
+            <br />
+            <Text style={{ color: "white" }}>
+              {artistImages[currentArtistIndex].description}
+            </Text>
+          </div>
+        </div>
+      </div>
 
-      {/* Search Bar muncul di bawah banner */}
-      <Row justify="center" style={{ marginTop: 32 }}>
-        <Col xs={24} sm={22} md={20} lg={18}>
-          <Input
-  size="large"
-  placeholder="Looking for something to vibe with? 🎶"
-  prefix={<SearchOutlined />}
-  value={searchText}
-  onChange={(e) => setSearchText(e.target.value)}
-  style={{
-    border: "2px solid transparent",
-    borderRadius: 8,
-    backgroundImage:
-      "linear-gradient(white, white), linear-gradient(to right, red, orange, yellow, green, blue, indigo, violet)",
-    backgroundOrigin: "border-box",
-    backgroundClip: "padding-box, border-box",
-  }}
-/>
-        </Col>
-      </Row>
+      {/* List Playlist */}
+      <List
+        loading={loading}
+        grid={{ gutter: 16, column: 3 }}
+        dataSource={filteredData}
+        renderItem={(item) => (
+          <List.Item>
+            <Card
+              hoverable
+              cover={
+                <img
+                  alt="thumbnail"
+                  src={
+                    item.play_thumbnail || getYouTubeThumbnail(item.play_url)
+                  }
+                  style={{ height: 200, objectFit: "cover" }}
+                />
+              }
+              actions={[
+                <Button
+                  type="link"
+                  href={item.play_url}
+                  target="_blank"
+                  icon={<PlayCircleOutlined />}
+                />,
+                <EditOutlined
+                  style={{ color: "#ccc", cursor: "not-allowed" }}
+                />,
+                <DeleteOutlined
+                  style={{ color: "#ccc", cursor: "not-allowed" }}
+                />,
+              ]}
+            >
+              <Title level={5}>{item.play_name}</Title>
+              <Text type="secondary">
+                Genre: {item.play_genre || "-"}
+              </Text>
+              <br />
+              <Text>{item.play_description}</Text>
+            </Card>
+          </List.Item>
+        )}
+      />
+
+      {/* Drawer Form */}
+      <Drawer
+        title={editingId ? "Edit Playlist" : "Tambah Playlist"}
+        open={drawerOpen}
+        onClose={() => {
+          form.resetFields();
+          setDrawerOpen(false);
+          setEditingId(null);
+        }}
+        width={400}
+      >
+        <Form layout="vertical" form={form} onFinish={onFinish}>
+          <Form.Item
+            name="play_name"
+            label="Nama"
+            rules={[{ required: true }]}
+          >
+            <Input placeholder="Nama Playlist" />
+          </Form.Item>
+          <Form.Item
+            name="play_url"
+            label="URL Video"
+            rules={[{ required: true }]}
+          >
+            <Input placeholder="Contoh: https://..." />
+          </Form.Item>
+          <Form.Item name="play_thumbnail" label="Thumbnail (Opsional)">
+            <Input placeholder="Kosongkan untuk otomatis dari YouTube" />
+          </Form.Item>
+          <Form.Item
+            name="play_genre"
+            label="Genre"
+            rules={[{ required: true }]}
+          >
+            <Input placeholder="Contoh: Musik, Edukasi" />
+          </Form.Item>
+          <Form.Item name="play_description" label="Deskripsi">
+            <Input.TextArea rows={3} />
+          </Form.Item>
+          <Form.Item>
+            <Button type="primary" htmlType="submit" block>
+              Save
+            </Button>
+          </Form.Item>
+        </Form>
+      </Drawer>
     </div>
   );
 };
