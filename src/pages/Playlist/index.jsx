@@ -18,7 +18,7 @@ import {
   DeleteOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
-import { sendData, getData, updateData } from "../../utils/api";
+import { sendData, getData, updateData, deleteData } from "../../utils/api";
 
 import TaylorImg from "../../assets/images/taylor.jpeg";
 import BillieImg from "../../assets/images/billie.jpeg";
@@ -99,10 +99,7 @@ const Playlist = () => {
 
     try {
       if (editingItem) {
-        await updateData(
-          `/api/playlist/${groupId}/${editingItem.id}`,
-          formData
-        );
+        await updateData(`/api/playlist/update/${editingItem.id_play}`, formData);
         api.success({ message: "Berhasil mengedit playlist" });
       } else {
         await sendData(`/api/playlist/${groupId}`, formData);
@@ -116,6 +113,18 @@ const Playlist = () => {
     } catch (error) {
       console.error(error);
       api.error({ message: "Gagal menyimpan playlist" });
+    }
+  };
+
+  // Fungsi delete tetap ada (untuk internal), tapi tidak dipanggil di UI
+  const handleDelete = async (id) => {
+    try {
+      await deleteData(`/api/playlist/${id}`);
+      api.success({ message: "Berhasil menghapus playlist" });
+      fetchData();
+    } catch (error) {
+      console.error("Gagal menghapus playlist", error);
+      api.error({ message: "Gagal menghapus playlist" });
     }
   };
 
@@ -167,6 +176,7 @@ const Playlist = () => {
           </Col>
         </Row>
 
+        {/* Slideshow */}
         <div
           style={{
             width: "100%",
@@ -215,8 +225,14 @@ const Playlist = () => {
           .filter((item) =>
             item.play_name.toLowerCase().includes(searchText.toLowerCase())
           )
-          .map((item) => (
-            <Col key={item.id} xs={24} sm={12} md={8} lg={6}>
+          .map((item, index) => (
+            <Col
+              key={item.id_play || `${item.play_name}-${index}`}
+              xs={24}
+              sm={12}
+              md={8}
+              lg={6}
+            >
               <Card
                 hoverable
                 cover={
@@ -228,21 +244,20 @@ const Playlist = () => {
                 }
                 actions={[
                   <a
+                    key="play"
                     href={item.play_url}
                     target="_blank"
                     rel="noreferrer"
                     style={{ color: "#1890ff" }}
                   >
-                    <PlayCircleOutlined key="play" />
+                    <PlayCircleOutlined />
                   </a>,
-                  <EditOutlined
-                    key="edit"
-                    style={{ cursor: "default", opacity: 0.3 }}
-                  />,
-                  <DeleteOutlined
-                    key="delete"
-                    style={{ cursor: "default", opacity: 0.3 }}
-                  />,
+                  <span key="edit" title="Edit disabled" style={{ color: "gray", cursor: "not-allowed" }}>
+                    <EditOutlined />
+                  </span>,
+                  <span key="delete" title="Delete disabled" style={{ color: "gray", cursor: "not-allowed" }}>
+                    <DeleteOutlined />
+                  </span>,
                 ]}
               >
                 <Card.Meta
@@ -290,7 +305,7 @@ const Playlist = () => {
           <Form.Item label="Thumbnail" name="play_thumbnail">
             <Input placeholder="Opsional, akan otomatis jika kosong" />
           </Form.Item>
-          <Form.Item label="Genre" name="play_genre" initialValue=" ">
+          <Form.Item label="Genre" name="play_genre" initialValue="education">
             <Select>
               <Option value="education">Education</Option>
               <Option value="music">Music</Option>

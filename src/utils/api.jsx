@@ -33,24 +33,30 @@ export const updateData = async (endpoint, data) => {
   const isFormData = data instanceof FormData;
 
   const headers = isFormData
-    ? {} // Axios will auto-handle multipart
+    ? {} // Biar axios handle FormData
     : {
         "Content-Type": "application/x-www-form-urlencoded",
       };
 
   const payload = isFormData ? data : new URLSearchParams(data).toString();
 
-  const response = await axios.put(`${BASE_URL}${endpoint}`, payload, {
+  const response = await axios.post(`${BASE_URL}${endpoint}`, payload, {
     headers,
   });
 
   return response.data;
 };
 
+
+
 // DELETE data
 export const deleteData = async (endpoint) => {
-  const response = await axios.delete(`${BASE_URL}${endpoint}`);
-  return response.data;
+  try {
+    const response = await axios.delete(`${BASE_URL}${endpoint}`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
 };
 
 
