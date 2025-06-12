@@ -290,13 +290,11 @@ const Playlist = () => {
           <Form.Item label="Thumbnail" name="play_thumbnail">
             <Input placeholder="Opsional, akan otomatis jika kosong" />
           </Form.Item>
-          <Form.Item label="Genre" name="play_genre" initialValue="education">
+          <Form.Item label="Genre" name="play_genre" initialValue=" ">
             <Select>
               <Option value="education">Education</Option>
-              <Option value="music">Rock</Option>
+              <Option value="music">Music</Option>
               <Option value="documentary">Documentary</Option>
-              <Option value="documentary">Pop</Option>
-              <Option value="documentary">Japan Based</Option>
               <Option value="other">Other</Option>
             </Select>
           </Form.Item>
