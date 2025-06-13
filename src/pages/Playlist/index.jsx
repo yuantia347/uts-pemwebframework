@@ -128,6 +128,17 @@ const Playlist = () => {
     }
   };
 
+  const handleDelete = async (id) => {
+    try {
+      await deleteData(`/api/playlist/${id}`);
+      api.success({ message: "Playlist berhasil dihapus" });
+      fetchData();
+    } catch (error) {
+      console.error("Gagal menghapus playlist:", error);
+      api.error({ message: "Gagal menghapus playlist" });
+    }
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -253,13 +264,15 @@ const Playlist = () => {
                     <PlayCircleOutlined />
                   </a>,
                   <EditOutlined key="edit" onClick={() => showDrawerEdit(item)} />,
-                  <span
+                  <DeleteOutlined
                     key="delete"
-                    title="Delete disabled"
-                    style={{ color: "gray", cursor: "not-allowed" }}
-                  >
-                    <DeleteOutlined />
-                  </span>,
+                    onClick={() => {
+                      if (window.confirm("Yakin ingin menghapus playlist ini?")) {
+                        handleDelete(item.id_play);
+                      }
+                    }}
+                    style={{ color: "red" }}
+                  />,
                 ]}
               >
                 <Card.Meta
