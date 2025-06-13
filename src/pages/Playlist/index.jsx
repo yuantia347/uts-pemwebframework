@@ -10,6 +10,7 @@ import {
   Row,
   Col,
   Select,
+  Popconfirm,
 } from "antd";
 import {
   PlusCircleFilled,
@@ -264,15 +265,14 @@ const Playlist = () => {
                     <PlayCircleOutlined />
                   </a>,
                   <EditOutlined key="edit" onClick={() => showDrawerEdit(item)} />,
-                  <DeleteOutlined
-                    key="delete"
-                    onClick={() => {
-                      if (window.confirm("Yakin ingin menghapus playlist ini?")) {
-                        handleDelete(item.id_play);
-                      }
-                    }}
-                    style={{ color: "red" }}
-                  />,
+                  <Popconfirm
+                    title="Yakin ingin menghapus playlist ini?"
+                    onConfirm={() => handleDelete(item.id_play)}
+                    okText="Ya"
+                    cancelText="Batal"
+                  >
+                    <DeleteOutlined key="delete" style={{ color: "red" }} />
+                  </Popconfirm>,
                 ]}
               >
                 <Card.Meta
