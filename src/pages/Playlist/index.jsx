@@ -87,6 +87,18 @@ const Playlist = () => {
     }
   };
 
+  const showDrawerEdit = (item) => {
+    setEditingItem(item);
+    setOpen(true);
+    form.setFieldsValue({
+      play_name: item.play_name,
+      play_url: item.play_url,
+      play_thumbnail: item.play_thumbnail,
+      play_genre: item.play_genre,
+      play_description: item.play_description,
+    });
+  };
+
   const onFinish = async (values) => {
     if (!values.play_thumbnail && values.play_url) {
       values.play_thumbnail = getYouTubeThumbnail(values.play_url);
@@ -113,18 +125,6 @@ const Playlist = () => {
     } catch (error) {
       console.error(error);
       api.error({ message: "Gagal menyimpan playlist" });
-    }
-  };
-
-  // Fungsi delete tetap ada (untuk internal), tapi tidak dipanggil di UI
-  const handleDelete = async (id) => {
-    try {
-      await deleteData(`/api/playlist/${id}`);
-      api.success({ message: "Berhasil menghapus playlist" });
-      fetchData();
-    } catch (error) {
-      console.error("Gagal menghapus playlist", error);
-      api.error({ message: "Gagal menghapus playlist" });
     }
   };
 
@@ -252,10 +252,12 @@ const Playlist = () => {
                   >
                     <PlayCircleOutlined />
                   </a>,
-                  <span key="edit" title="Edit disabled" style={{ color: "gray", cursor: "not-allowed" }}>
-                    <EditOutlined />
-                  </span>,
-                  <span key="delete" title="Delete disabled" style={{ color: "gray", cursor: "not-allowed" }}>
+                  <EditOutlined key="edit" onClick={() => showDrawerEdit(item)} />,
+                  <span
+                    key="delete"
+                    title="Delete disabled"
+                    style={{ color: "gray", cursor: "not-allowed" }}
+                  >
                     <DeleteOutlined />
                   </span>,
                 ]}
